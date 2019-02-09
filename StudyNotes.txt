@@ -1,0 +1,423 @@
+//===================================================================================================//
+
+Building REST services with Spring 
+
+
+Starting from the very beginning, we will be following a basic tutorial and covering some simple base
+concepts regarding the spring framework. REST has quickly become the de-facto standard for building web
+services because they are so easy to build and consume. There is another discussion about how rest fits
+into the world of microservices architecture but for now we will focus on simply building the RESTful 
+service. 
+
+REST is very beneficial because it embraces the precepts of the web including the architecture benefits
+and everything else. Its author Roy Fielding was probably involved in a dozen specs which govern how
+the web operates. 
+
+The web and its core protocol, HTTP, provide a stack of features:
+
+	-Suitable actions (GET, POST, PUT, DELETE) 
+	-Caching 
+	-Redirection and forwarding 
+	-Security (encryption and authentication) 
+
+These are all critical factors on building resilient services but building on top of HTTP, REST APIs 
+provide the means to build flexible APIs that can: 
+
+	-Support backward compatibility
+	-Evolvable APIs 
+	-Scaleable services 
+	-Securable services 
+	-A spectrum of stateless to stateful services 
+
+REST is not a standard per se but an approach with a set of constraints on your architecture that can 
+help you build web-scale systems. The project will use the Spring portfolio to build a RESTful service
+while leveraging the stackless features of REST. 
+
+
+This tutorial will utilize Spring Boot which can be built using the Spring Initializr with the 
+following dependencies: 
+
+	-Web 
+	-JPA
+	-H2
+	-Lombok 
+
+
+//===================================================================================================//
+
+Starting from the simplest thing we can construct, we are going to leave off the concepts of REST and
+then add them in later to understand the difference. 
+
+This example models a simple payroll service that manages the employees of a company. Simply put we
+will be storing employee objects in an H2/Postgres in-memory database, and access them via JPA. This
+will be wrapped with a Spring MVC layer to access remotely. 
+
+
+//===================================================================================================//
+
+package payroll;
+
+import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+
+@Data
+@Entity
+class Employee {
+
+	private @Id @GeneratedValue Long id;
+	private String name;
+	private String role;
+
+	Employee(String name, String role) {
+		this.name = name;
+		this.role = role;
+	}
+
+	// this was not located in the tutorial but for some reason you need a default constructor 
+	   which has no arguments 
+
+	Employee(){
+	// default no args constructor
+	}
+
+}
+
+
+
+Important things to note about this java class: 
+
+	- @Data is a Lombok annotation to create all the getters, setters, equals, hash, and toString
+	  methods based on the fields 
+
+	- @Entity is a JPA annotation to make this object ready for storage in a JPA-based data store
+
+	- id, name, and role are the attribute for our domain object, the first being marked with more
+	  JPA annotations to indicate it's the primary key and automatically populated by the JPA 
+	  provider
+
+	- a custom constructor is created when we need to create a new instance but don't have an id
+
+With this domain object definition, we can turn to Spring Data JPA to handle the tedious database 
+interactions. Spring Data repositories are interfaces with methods supporting reading, updating, 
+deleting and creating records against a back end data store. Some repositories also support data paging
+and sorting when appropriate. Spring Data synthesizes implementations based on conventions found in
+the name of the methods in the interface. 
+
+There are multiple repository implementations besides JPA. You can use Spring Data MongoDB, Spring Data
+GemFire, Spring Data Cassandra, etc. For this tutorial we will stick with JPA 
+
+
+
+//===================================================================================================//
+
+package payroll;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+interface EmployeeRepository extends JpaRepository<Employee, Long> {
+
+}
+
+
+The interface extends Spring Data JPA's JpaRespository , specifying the domain type as Employee and the
+id type as Long. This interface, though empty on the surface, is full of functionality given that it 
+supports: 
+
+	- Creating new instances
+	- Updating existing ones
+	- Deleting 
+	- Finding (one, all, by simple or complex properties) 
+
+Spring Data's repository solution makes it possible to sidestep data store specifics and instead solve
+a majority of problems using domain-specific terminology. 
+
+
+At this point, this is enough a launch an application- Spring Boot app is at minimum a public static 
+void main entry-point and the @SpringBootApplication annotation. This tells Spring Boot to help out
+whenever possible. 
+
+
+//===================================================================================================//
+
+
+package payroll;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class PayrollApplication {
+
+	public static void main(String... args) {
+		SpringApplication.run(PayrollApplication.class, args);
+	}
+}
+
+
+@SpringBootApplication is a meta-annotation that pulls in component scanning, autoconfiguration and 
+property support. In essence it starts up a servlet container and serves up our service. 
+
+
+
+
+
+//===================================================================================================//
+
+
+An application with no data is not very interesting so lets load it. The following class will get 
+loaded automatically by Spring: 
+
+
+
+package payroll;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@Slf4j
+class LoadDatabase {
+    @Bean
+    CommandLineRunner initDatabase(EmployeeRepository repository){
+        return args -> {
+            log.info("Preloading "+repository.save(new Employee("Tony Stark", "IT Technician")));
+            log.info("Preloading "+repository.save(new Employee("Bruce Wayne", "Business Analyst")));
+
+        };
+    }
+}
+
+
+When it gets loaded: 
+
+	- Spring Boot will run ALL CommandLineRunner beans once the application context is loaded
+	- This runner will request a copy of the EmployeeRepository you just created
+	- Using it, this class will create two entities and store them 
+	- @Slf4j is a Lombok annotation to autocreate an Slf4j-based LoggerFactory as log, allowing
+	  us to log these newly created "employees" 
+
+
+Now when running PayRollApplication we can see this: 
+
+...
+2019-02-05 14:22:10.150  INFO 43680 --- [           main] com.example.RESTService.LoadDatabase     
+: Preloading Employee(id=1, name=Tony Stark, role=IT Technician)
+
+2019-02-05 14:22:10.153  INFO 43680 --- [           main] com.example.RESTService.LoadDatabase     
+: Preloading Employee(id=2, name=Bruce Wayne, role=Business Analyst)
+...
+
+
+
+//===================================================================================================//
+
+
+HTTP Platform
+
+To wrap the repository in a web layer we have to utilize the Spring MVC. Thanks to Spring Boot, there
+is little in infrastructure to code. Instead, we can focus on actions: 
+
+
+
+
+package payroll;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+class EmployeeController {
+
+	private final EmployeeRepository repository;
+
+	EmployeeController(EmployeeRepository repository) {
+		this.repository = repository;
+	}
+
+	// Aggregate root
+
+	@GetMapping("/employees")
+	List<Employee> all() {
+		return repository.findAll();
+	}
+
+	@PostMapping("/employees")
+	Employee newEmployee(@RequestBody Employee newEmployee) {
+		return repository.save(newEmployee);
+	}
+
+	// Single item
+
+	@GetMapping("/employees/{id}")
+	Employee one(@PathVariable Long id) {
+
+		return repository.findById(id)
+			.orElseThrow(() -> new EmployeeNotFoundException(id));
+	}
+
+	@PutMapping("/employees/{id}")
+	Employee replaceEmployee(@RequestBody Employee newEmployee, @PathVariable Long id) {
+
+		return repository.findById(id)
+			.map(employee -> {
+				employee.setName(newEmployee.getName());
+				employee.setRole(newEmployee.getRole());
+				return repository.save(employee);
+			})
+			.orElseGet(() -> {
+				newEmployee.setId(id);
+				return repository.save(newEmployee);
+			});
+	}
+
+	@DeleteMapping("/employees/{id}")
+	void deleteEmployee(@PathVariable Long id) {
+		repository.deleteById(id);
+	}
+}
+
+
+
+Important things to note about this java class: 
+	- @RestController indicates that the data returned by each method will be written straight into
+	  the response body instead of rendering a template
+
+	- An EmployeeRepository is injected by constructor into the controller
+
+	- We have routes for each operations (@GetMapping, @PostMapping, @PutMapping, and 
+	  @DeleteMapping, corresponding to the HTTP GET, POST, PUT and DELETE calls 
+
+	- EmployeeNotFoundException is an exception used to indicate when an employee is looked up but
+	  not found 
+
+
+
+//===================================================================================================//
+
+package payroll;
+
+class EmployeeNotFoundException extends RuntimeException {
+
+	EmployeeNotFoundException(Long id) {
+		super("Could not find employee " + id);
+	}
+}
+
+
+
+
+When an EmployeeNotFoundException is thrown this extra bit of Spring MVC Configuration is used to 
+render an HTTP 404:
+
+
+
+
+EmployeeNotFoundAdvice.java
+
+
+package payroll;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ControllerAdvice
+class EmployeeNotFoundAdvice {
+
+	@ResponseBody
+	@ExceptionHandler(EmployeeNotFoundException.class)
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	String employeeNotFoundHandler(EmployeeNotFoundException ex) {
+		return ex.getMessage();
+	}
+}
+
+Important things to note about this class: 
+	- @ResponseBody signals that this advice is rendered straight into the response body
+	- @ExceptionHandler configures the advice to only respond if an EmployeeNotFoundException is
+	  thrown 
+
+	- @ResponseStatus says to issue an HttpStatus.NOT_FOUND ie. HTTP 404
+	- the body of the advice generates the content. In this case it gives the message of the 
+	  exception
+
+
+
+Right now we can test the application by running 
+
+mvn clean spring-boot:run 
+
+When the app starts, we can see the data that we loaded into the database using 
+
+curl -v localhost:8080/employees
+
+
+//===================================================================================================//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//===================================================================================================//
