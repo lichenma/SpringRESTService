@@ -362,13 +362,33 @@ Right now we can test the application by running
 
 mvn clean spring-boot:run 
 
-When the app starts, we can see the data that we loaded into the database using 
+When the app starts, we can see the data that we loaded into the database, access a non existing 
+Employee record (returns 404 error), create a new Employee record, alter the user, or delete the user
+using the following commands:
 
 curl -v localhost:8080/employees
+curl -v localhost:8080/employees/99
+curl -X POST localhost:8080/employees -H 'Content-type:application/json' -d '{"name":"Thor", "role":
+"electrician"}'
+curl -X PUT localhost:8080/employees/3 -H 'Content-type:application/json' -d '{"name":"Thor", "role":
+"Norse God"}'
+curl -X DELETE localhost:8080/employees/3
 
 
 //===================================================================================================//
 
+What is a REST Service? 
+
+So far in this tutorial we have covered creating a web-based service that handles the core operations 
+involving employee data. This however, is not enough to make things "RESTful" 
+
+	- Pretty URLs like /employees/3 aren't REST 
+	- Merely using GET, POST, etc aren't REST 
+	- Having all the CRUD operations laid out aren't REST 
+
+What we have built up to this point is better described as RPC (Remote Procedure Call). This is because
+there is no way to know how to interact with this service. If it was published today, we would also 
+have to write a document or host a developer's portal somewhere with all the details. 
 
 
 
@@ -376,6 +396,82 @@ curl -v localhost:8080/employees
 
 
 
+This is a statement by Roy Fielding about the difference between REST and RPC: 
+
+"I am getting frustrated with the number of people calling any HTTP-based interface a REST API. Today's
+example is SocialSite REST API. That is RPC. It screams RPC. There is so much coupling on display that
+it should be given an X rating. What needs to be done to make the REST architectural style clear on the
+notion that hypertext is a constraint? In other words, if the engine of application state (and hence 
+the API) is not being driven by hypertext, then it cannot be RESTful and cannot be a REST API. Period.
+Is there some broken manual somewhere that needs to be fixed?" 
+
+
+
+
+
+
+
+The side effect of NOT including hypermedia in our representations is that clients MUST hard code URIs 
+to navigate the API. This leads to the same brittle nature that predated the rise of e-commerce on the
+web. It's a signal that our JSON output needs a little help. 
+
+Introducing Spring HATEOAS, a Spring project aimed at helping to build hypermedia-driven outputs. To 
+upgrade the service to being RESTful, add this to your build: 
+
+
+
+<dependency> 
+	<groupId>org.springframework.boot</groupId> 
+	<artifactId>spring-boot-starter-hateoas</artifactId> 
+</dependency> 
+
+
+
+This small library gives us the constructs to define a RESTful service and then render it in an 
+acceptible format for client consumption. A critical ingredient to any RESTful service is adding links
+to relevant operations. To make the controller more RESTful add links like this:
+
+
+
+
+
+@GetMapping("/employees/{id}")
+Resource<Employee> one(@PathVariable Long id) {
+	Employee employee= repository.findById(id)
+		.orElseThrow(() -> new EmployeeNotFoundException(id));
+
+	return new Resource<>(employee,
+		linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel(),
+		linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
+}
+
+
+
+
+
+
+This is very similar to what we had before, but a few things have changed: 
+
+	- The return type of the method has changed from Employee to Resource<Employee>. Resource<T> is
+	  a generic container from Spring HATEOAS that include not only the data but a collection of 
+	  links 
+
+	- linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel() asks that Spring HATEOAS 
+	  build a link to the EmployeeCOntroller's one() method, and flag it as a self link 
+
+	- linkTo(methodOn(EmployeeController.class).all()).withRel("employees") asks Spring HATEOAS to 
+	  build a link to the aggregate root, all(), and call it "employees" 
+
+What do we mean by "build a link"? One of Spring HATEOAS's core types is Link. It includes a URI and a
+rel (relation). Links are what empower the web. Before the World Wide Web. other document systems 
+would render information or links, but it was the link of documents with data that stitched the web 
+together. 
+
+Roy Fielding enourages building APIs with the same techniques that made the web successful and links 
+are one of them. 
+
+If you restart the application and query the employee record of Tony, there is now a slightly different
+response than earlier: 
 
 
 
