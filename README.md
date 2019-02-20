@@ -16,11 +16,7 @@ mvn clean spring-boot:run
 Ideally the most recent java and maven versions, I used the following when building and testing the webpage.
 
 ```
-Apache Maven 3.6.0
-```
-
-```
-Java version 1.8.0_192
+Apache Maven 3.6.0  Java version 1.8.0_192
 ```
 
 ## Built With
