@@ -1,7 +1,4 @@
-
-//===================================================================================================//
-
-Building REST services with Spring 
+# Building REST services with Spring 
 
 
 Starting from the very beginning, we will be following a basic tutorial and covering some simple base
@@ -16,19 +13,19 @@ the web operates.
 
 The web and its core protocol, HTTP, provide a stack of features:
 
-	-Suitable actions (GET, POST, PUT, DELETE) 
-	-Caching 
-	-Redirection and forwarding 
-	-Security (encryption and authentication) 
+* Suitable actions (GET, POST, PUT, DELETE) 
+* Caching 
+* Redirection and forwarding 
+* Security (encryption and authentication) 
 
 These are all critical factors on building resilient services but building on top of HTTP, REST APIs 
 provide the means to build flexible APIs that can: 
 
-	-Support backward compatibility
-	-Evolvable APIs 
-	-Scaleable services 
-	-Securable services 
-	-A spectrum of stateless to stateful services 
+* Support backward compatibility
+* Evolvable APIs 
+* Scaleable services 
+* Securable services 
+* A spectrum of stateless to stateful services 
 
 REST is not a standard per se but an approach with a set of constraints on your architecture that can 
 help you build web-scale systems. The project will use the Spring portfolio to build a RESTful service
@@ -38,13 +35,13 @@ while leveraging the stackless features of REST.
 This tutorial will utilize Spring Boot which can be built using the Spring Initializr with the 
 following dependencies: 
 
-	-Web 
-	-JPA
-	-H2
-	-Lombok 
+* Web 
+* JPA
+* H2
+* Lombok 
 
 
-//===================================================================================================//
+## Remote Procedural Call
 
 Starting from the simplest thing we can construct, we are going to leave off the concepts of REST and
 then add them in later to understand the difference. 
@@ -53,9 +50,7 @@ This example models a simple payroll service that manages the employees of a com
 will be storing employee objects in an H2/Postgres in-memory database, and access them via JPA. This
 will be wrapped with a Spring MVC layer to access remotely. 
 
-
-//===================================================================================================//
-
+```java
 package payroll;
 
 import lombok.Data;
@@ -85,21 +80,21 @@ class Employee {
 	}
 
 }
-
+```
 
 
 Important things to note about this java class: 
 
-	- @Data is a Lombok annotation to create all the getters, setters, equals, hash, and toString
-	  methods based on the fields 
+* @Data is a Lombok annotation to create all the getters, setters, equals, hash, and toString 
+  methods based on the fields 
 
-	- @Entity is a JPA annotation to make this object ready for storage in a JPA-based data store
+*  @Entity is a JPA annotation to make this object ready for storage in a JPA-based data store
 
-	- id, name, and role are the attribute for our domain object, the first being marked with more
-	  JPA annotations to indicate it's the primary key and automatically populated by the JPA 
-	  provider
+* id, name, and role are the attribute for our domain object, the first being marked with more
+  JPA annotations to indicate it's the primary key and automatically populated by the JPA provider
 
-	- a custom constructor is created when we need to create a new instance but don't have an id
+* a custom constructor is created when we need to create a new instance but don't have an id
+
 
 With this domain object definition, we can turn to Spring Data JPA to handle the tedious database 
 interactions. Spring Data repositories are interfaces with methods supporting reading, updating, 
@@ -107,13 +102,14 @@ deleting and creating records against a back end data store. Some repositories a
 and sorting when appropriate. Spring Data synthesizes implementations based on conventions found in
 the name of the methods in the interface. 
 
+
 There are multiple repository implementations besides JPA. You can use Spring Data MongoDB, Spring Data
 GemFire, Spring Data Cassandra, etc. For this tutorial we will stick with JPA 
 
 
 
-//===================================================================================================//
 
+```java
 package payroll;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -121,19 +117,26 @@ import org.springframework.data.jpa.repository.JpaRepository;
 interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
 }
+```
+
+
 
 
 The interface extends Spring Data JPA's JpaRespository , specifying the domain type as Employee and the
 id type as Long. This interface, though empty on the surface, is full of functionality given that it 
 supports: 
 
-	- Creating new instances
-	- Updating existing ones
-	- Deleting 
-	- Finding (one, all, by simple or complex properties) 
+* Creating new instances
+* Updating existing ones
+* Deleting 
+* Finding (one, all, by simple or complex properties) 
+
+
 
 Spring Data's repository solution makes it possible to sidestep data store specifics and instead solve
 a majority of problems using domain-specific terminology. 
+
+
 
 
 At this point, this is enough a launch an application- Spring Boot app is at minimum a public static 
@@ -141,9 +144,7 @@ void main entry-point and the @SpringBootApplication annotation. This tells Spri
 whenever possible. 
 
 
-//===================================================================================================//
-
-
+```java
 package payroll;
 
 import org.springframework.boot.SpringApplication;
@@ -156,23 +157,21 @@ public class PayrollApplication {
 		SpringApplication.run(PayrollApplication.class, args);
 	}
 }
-
+```
 
 @SpringBootApplication is a meta-annotation that pulls in component scanning, autoconfiguration and 
 property support. In essence it starts up a servlet container and serves up our service. 
 
 
 
-
-
-//===================================================================================================//
+## Inserting Data
 
 
 An application with no data is not very interesting so lets load it. The following class will get 
 loaded automatically by Spring: 
 
 
-
+```java
 package payroll;
 
 import lombok.extern.slf4j.Slf4j;
@@ -193,19 +192,22 @@ class LoadDatabase {
         };
     }
 }
-
+```
 
 When it gets loaded: 
 
-	- Spring Boot will run ALL CommandLineRunner beans once the application context is loaded
-	- This runner will request a copy of the EmployeeRepository you just created
-	- Using it, this class will create two entities and store them 
-	- @Slf4j is a Lombok annotation to autocreate an Slf4j-based LoggerFactory as log, allowing
-	  us to log these newly created "employees" 
+* Spring Boot will run ALL CommandLineRunner beans once the application context is loaded
+* This runner will request a copy of the EmployeeRepository you just created
+* Using it, this class will create two entities and store them 
+* @Slf4j is a Lombok annotation to autocreate an Slf4j-based LoggerFactory as log, allowing
+  us to log these newly created "employees" 
+
+
 
 
 Now when running PayRollApplication we can see this: 
 
+```
 ...
 2019-02-05 14:22:10.150  INFO 43680 --- [           main] com.example.RESTService.LoadDatabase     
 : Preloading Employee(id=1, name=Tony Stark, role=IT Technician)
@@ -213,20 +215,19 @@ Now when running PayRollApplication we can see this:
 2019-02-05 14:22:10.153  INFO 43680 --- [           main] com.example.RESTService.LoadDatabase     
 : Preloading Employee(id=2, name=Bruce Wayne, role=Business Analyst)
 ...
+```
 
 
 
-//===================================================================================================//
+## HTTP Platform
 
-
-HTTP Platform
 
 To wrap the repository in a web layer we have to utilize the Spring MVC. Thanks to Spring Boot, there
 is little in infrastructure to code. Instead, we can focus on actions: 
 
 
 
-
+```java
 package payroll;
 
 import java.util.List;
@@ -289,25 +290,25 @@ class EmployeeController {
 		repository.deleteById(id);
 	}
 }
+```
 
 
 
 Important things to note about this java class: 
-	- @RestController indicates that the data returned by each method will be written straight into
-	  the response body instead of rendering a template
+* @RestController indicates that the data returned by each method will be written straight into
+  the response body instead of rendering a template
 
-	- An EmployeeRepository is injected by constructor into the controller
+* An EmployeeRepository is injected by constructor into the controller
 
-	- We have routes for each operations (@GetMapping, @PostMapping, @PutMapping, and 
-	  @DeleteMapping, corresponding to the HTTP GET, POST, PUT and DELETE calls 
+* We have routes for each operations (@GetMapping, @PostMapping, @PutMapping, and 
+  @DeleteMapping, corresponding to the HTTP GET, POST, PUT and DELETE calls 
 
-	- EmployeeNotFoundException is an exception used to indicate when an employee is looked up but
-	  not found 
+* EmployeeNotFoundException is an exception used to indicate when an employee is looked up but
+  not found 
 
 
 
-//===================================================================================================//
-
+```java
 package payroll;
 
 class EmployeeNotFoundException extends RuntimeException {
@@ -316,8 +317,7 @@ class EmployeeNotFoundException extends RuntimeException {
 		super("Could not find employee " + id);
 	}
 }
-
-
+```
 
 
 When an EmployeeNotFoundException is thrown this extra bit of Spring MVC Configuration is used to 
@@ -325,7 +325,7 @@ render an HTTP 404:
 
 
 
-
+```java
 EmployeeNotFoundAdvice.java
 
 
@@ -347,26 +347,34 @@ class EmployeeNotFoundAdvice {
 		return ex.getMessage();
 	}
 }
+```
+
+
 
 Important things to note about this class: 
-	- @ResponseBody signals that this advice is rendered straight into the response body
-	- @ExceptionHandler configures the advice to only respond if an EmployeeNotFoundException is
-	  thrown 
+* @ResponseBody signals that this advice is rendered straight into the response body
+* @ExceptionHandler configures the advice to only respond if an EmployeeNotFoundException is
+  thrown 
 
-	- @ResponseStatus says to issue an HttpStatus.NOT_FOUND ie. HTTP 404
-	- the body of the advice generates the content. In this case it gives the message of the 
-	  exception
+* @ResponseStatus says to issue an HttpStatus.NOT\_FOUND ie. HTTP 404
+* the body of the advice generates the content. In this case it gives the message of the 
+  exception
 
 
 
 Right now we can test the application by running 
 
+```
 mvn clean spring-boot:run 
+```
+
 
 When the app starts, we can see the data that we loaded into the database, access a non existing 
 Employee record (returns 404 error), create a new Employee record, alter the user, or delete the user
 using the following commands:
 
+
+```
 curl -v localhost:8080/employees
 curl -v localhost:8080/employees/99
 curl -X POST localhost:8080/employees -H 'Content-type:application/json' -d '{"name":"Thor", "role":
@@ -374,18 +382,19 @@ curl -X POST localhost:8080/employees -H 'Content-type:application/json' -d '{"n
 curl -X PUT localhost:8080/employees/3 -H 'Content-type:application/json' -d '{"name":"Thor", "role":
 "Norse God"}'
 curl -X DELETE localhost:8080/employees/3
+```
 
 
-//===================================================================================================//
 
-What is a REST Service? 
+## What is a REST Service? 
 
 So far in this tutorial we have covered creating a web-based service that handles the core operations 
 involving employee data. This however, is not enough to make things "RESTful" 
 
-	- Pretty URLs like /employees/3 aren't REST 
-	- Merely using GET, POST, etc aren't REST 
-	- Having all the CRUD operations laid out aren't REST 
+* Pretty URLs like /employees/3 aren't REST 
+* Merely using GET, POST, etc aren't REST 
+* Having all the CRUD operations laid out aren't REST 
+
 
 What we have built up to this point is better described as RPC (Remote Procedure Call). This is because
 there is no way to know how to interact with this service. If it was published today, we would also 
@@ -394,19 +403,15 @@ have to write a document or host a developer's portal somewhere with all the det
 
 
 
-
-
-
 This is a statement by Roy Fielding about the difference between REST and RPC: 
-
+```
 "I am getting frustrated with the number of people calling any HTTP-based interface a REST API. Today's
 example is SocialSite REST API. That is RPC. It screams RPC. There is so much coupling on display that
 it should be given an X rating. What needs to be done to make the REST architectural style clear on the
 notion that hypertext is a constraint? In other words, if the engine of application state (and hence 
 the API) is not being driven by hypertext, then it cannot be RESTful and cannot be a REST API. Period.
 Is there some broken manual somewhere that needs to be fixed?" 
-
-
+```
 
 
 
@@ -420,12 +425,12 @@ Introducing Spring HATEOAS, a Spring project aimed at helping to build hypermedi
 upgrade the service to being RESTful, add this to your build: 
 
 
-
+```
 <dependency> 
 	<groupId>org.springframework.boot</groupId> 
 	<artifactId>spring-boot-starter-hateoas</artifactId> 
 </dependency> 
-
+```
 
 
 This small library gives us the constructs to define a RESTful service and then render it in an 
@@ -435,7 +440,7 @@ to relevant operations. To make the controller more RESTful add links like this:
 
 
 
-
+```
 @GetMapping("/employees/{id}")
 Resource<Employee> one(@PathVariable Long id) {
 	Employee employee= repository.findById(id)
@@ -445,7 +450,7 @@ Resource<Employee> one(@PathVariable Long id) {
 		linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel(),
 		linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
 }
-
+```
 
 
 
@@ -453,15 +458,17 @@ Resource<Employee> one(@PathVariable Long id) {
 
 This is very similar to what we had before, but a few things have changed: 
 
-	- The return type of the method has changed from Employee to Resource<Employee>. Resource<T> is
-	  a generic container from Spring HATEOAS that include not only the data but a collection of 
-	  links 
+* The return type of the method has changed from Employee to Resource<Employee>. Resource<T> is
+  a generic container from Spring HATEOAS that include not only the data but a collection of 
+  links 
 
-	- linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel() asks that Spring HATEOAS 
-	  build a link to the EmployeeCOntroller's one() method, and flag it as a self link 
+* linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel() asks that Spring HATEOAS 
+  build a link to the EmployeeCOntroller's one() method, and flag it as a self link 
 
-	- linkTo(methodOn(EmployeeController.class).all()).withRel("employees") asks Spring HATEOAS to 
-	  build a link to the aggregate root, all(), and call it "employees" 
+* linkTo(methodOn(EmployeeController.class).all()).withRel("employees") asks Spring HATEOAS to 
+  build a link to the aggregate root, all(), and call it "employees" 
+
+
 
 What do we mean by "build a link"? One of Spring HATEOAS's core types is Link. It includes a URI and a
 rel (relation). Links are what empower the web. Before the World Wide Web. other document systems 
@@ -474,7 +481,7 @@ are one of them.
 If you restart the application and query the employee record of Tony, there is now a slightly different
 response than earlier: 
 
-
+```
 $ curl -v localhost:8080/employees/1
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -494,10 +501,11 @@ $ curl -v localhost:8080/employees/1
 { [175 bytes data]
 100   169    0   169    0     0    676      0 --:--:-- --:--:-- --:--:--   676{"id":1,"name":"Tony Stark","role":"IT Technician","_links":{"self":{"href":"http://localhost:8080/employees/1"},"employees":{"href":"http://localhost:8080/employees"}}}
 * Connection #0 to host localhost left intact
+```
 
 
 Notice now that the output shows not only the data elements seen before (id, name, and role), but also
-a _link entry containing two URIs. This is formatted using Hypertext Application Language (HAL) - an 
+a \_link entry containing two URIs. This is formatted using Hypertext Application Language (HAL) - an 
 Internet Draft standard convention for definining hypermedia such as links to external resources within
 JSON or XML code. HAL is a lightweight mediatype that allows encoding not just data but also hypermedia
 controls, alerting consumers to other parts of the API they can navigate toward. In this case, there is
