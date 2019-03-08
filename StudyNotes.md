@@ -40,7 +40,7 @@ following dependencies:
 * H2
 * Lombok 
 
-
+<br><br>
 ## Remote Procedural Call
 
 Starting from the simplest thing we can construct, we are going to leave off the concepts of REST and
@@ -163,7 +163,7 @@ public class PayrollApplication {
 property support. In essence it starts up a servlet container and serves up our service. 
 
 
-
+<br><br>
 ## Inserting Data
 
 
@@ -218,7 +218,7 @@ Now when running PayRollApplication we can see this:
 ```
 
 
-
+<br><br>
 ## HTTP Platform
 
 
@@ -385,7 +385,7 @@ curl -X DELETE localhost:8080/employees/3
 ```
 
 
-
+<br><br>
 ## What is a REST Service? 
 
 So far in this tutorial we have covered creating a web-based service that handles the core operations 
@@ -537,10 +537,88 @@ Lets examine them:
   
 What does "encapsulating collections" mean? Is it collections of employees? 
 
+Not exactly.  
 
+Since we are talking REST, it should encapsulate collections of employee resources. This is why we 
+fetch all the employees, but then transform them into a list of Resource<Employee> objects (Thanks 
+to Java 8 Stream API). 
 
+Now if we restart the application and fetch the aggregate root, we see the following: 
 
+```
+$ curl -v localhost:8080/employees
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+> GET /employees HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.63.0
+> Accept: */*
+>
+< HTTP/1.1 200
+< Content-Type: application/hal+json;charset=UTF-8
+< Transfer-Encoding: chunked
+< Date: Fri, 08 Mar 2019 16:14:27 GMT
+<
+{ [444 bytes data]
+100   437    0   437    0     0    458      0 --:--:-- --:--:-- --:--:--   458{"_embedded":{"employeeList":[{"id":1,"name":"Tony Stark","role":"IT Technician","_links":{"self":{"href":"http://localhost:8080/employees/1"},"employees":{"href":"http://localhost:8080/employees"}}},{"id":2,"name":"Bruce Wayne","role":"Business Analyst","_links":{"self":{"href":"http://localhost:8080/employees/2"},"employees":{"href":"http://localhost:8080/employees"}}}]},"_links":{"self":{"href":"http://localhost:8080/employees"}}}
+* Connection #0 to host localhost left intact
+```
 
+If we format the output, we are now given this JSON when we fetch the aggregate root: 
+
+```
+{  
+   "_embedded":{  
+      "employeeList":[  
+         {  
+            "id":1,
+            "name":"Tony Stark",
+            "role":"IT Technician",
+            "_links":{  
+               "self":{  
+                  "href":"http://localhost:8080/employees/1"
+               },
+               "employees":{  
+                  "href":"http://localhost:8080/employees"
+               }
+            }
+         },
+         {  
+            "id":2,
+            "name":"Bruce Wayne",
+            "role":"Business Analyst",
+            "_links":{  
+               "self":{  
+                  "href":"http://localhost:8080/employees/2"
+               },
+               "employees":{  
+                  "href":"http://localhost:8080/employees"
+               }
+            }
+         }
+      ]
+   },
+   "_links":{  
+      "self":{  
+         "href":"http://localhost:8080/employees"
+      }
+   }
+}
+```
+
+This root node serves up a collection of employee resources but there is also a top-level "self" link.
+The "collection" is listed under the "\_embedded" section. This is how HAL represents collections. 
+
+Each individual member of the collection has their information as well as related links. 
+
+The importance of these links is that it makes it possible to evolve REST services over time - 
+Scalability. Existing links can be maintained while new links are added in the future. Newer clients 
+may take advantage of the new links, while legacy clients can sustain themselves on the old links. This
+is especially helpful if services get relocated and moved around. As long as the link struture is 
+maintained, clients can STILL find and interact with things. 
 
 
 
