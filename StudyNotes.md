@@ -728,10 +728,105 @@ Resources<Resource<Employee>> all() {
 ```
 
 
+The code is again almost the same but we got to replace all of the Resource<Employee> creation logic 
+with map(assembler::toResource). Thanks to Java 8 method references, it is extremely easy to plug it in
+and simplify the controller. 
+
+```
+	A key design goal for Spring HATEOAS is to make it easier to do The Right Thing TM. In this 
+	scenario, adding hypermedia to the service without hard coding anything
+```
+
+At this stage, we have created a Spring MVC REST controller that produces hypermedia-powered content.
+Clients that don't use HAL can ignore the extra bits while consuming the pure data. Clients that do use
+HAL can better navigate the empowered API. 
+
+This is great but not quite all of the things needed to build a truly RESTful service with Spring. 
 
 
 
 
+
+
+
+
+<br><br> 
+## Evolving REST APIs 
+
+
+
+With one additional library and a few lines of extra code, we have added hypermedia to the application.
+But that is not the only thing required for a RESTful service. Another import part of REST is the fact
+that it is neither a technology stack nor a single standard. 
+
+
+
+REST is a collection of architectural constraints that when adopted make an application more resilient.A key factor of resilience is that when you make upgrades to your services, your clients don't suffer 
+from downtime. 
+
+
+
+In the "olden" days, upgrades were notorious for breaking clients. In other words, an upgrade to the 
+server required an update to the client. In this day and age, hours or even minutes of downtime spent
+doing an upgrade can cost millions in lost revenue. 
+
+
+
+Some companies require that you present management with a plan to minimize downtime. In the past, you 
+could get away with upgrading at 2:00 am on a Sunday when load was at a minimum. But in today's 
+internet-based e-commerce with international customers, such strategies are not as effective. 
+
+
+
+SOAP-based services and CORBA-based services were incredibly brittle. It was hard to roll out a server
+that could support both old and new clients. WIth REST-based practices, it's much easier. Especially 
+using the Spring stack. 
+
+
+
+Imagine this design problem: You have just rolled out a system with this Employee - based record. The 
+system is a major hit. You have sold your system to countless enterprises. Suddenly, the need for an 
+employee's name to be split into firstName and lastName arises. 
+
+
+
+RIP. That is a problem 
+
+
+
+Before you being changing the Employee class and replacing the name field with firstName and lastName, 
+think about this. Will this break any clients? How long will it take to upgrade them? Do you even 
+controll all of the clients accessing your services? 
+
+```
+Downtime = Lost Money
+```
+
+
+
+Is management ready for that? 
+
+
+
+
+
+<br><br> 
+## Strategy 
+
+
+There is an old strategy that predates REST by years 
+
+
+```
+Never delete a column in a database 
+
+			-unknown
+```
+
+
+You can always add columns (fields) to a database table but don't take any away. This principle is the 
+same for RESTful services. We can add new fields to JSON representations but we should not take any 
+away. 
 
 
 
