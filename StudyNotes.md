@@ -830,6 +830,23 @@ away.
 
 
 
+```
+{  
+    "id":2,
+    "firstName": "Bruce",
+    "lastName": "Wayne",
+    "name":"Bruce Wayne",
+    "role":"Business Analyst",
+    "_links":{  
+       "self":{  
+	  "href":"http://localhost:8080/employees/2"
+       },
+       "employees":{  
+	  "href":"http://localhost:8080/employees"
+       }
+}
+```        
+
 
 
 
