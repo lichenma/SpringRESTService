@@ -513,7 +513,29 @@ a "self" link (kind of like a this statement in coding) along with a link back t
 (Aggregate roots are the only objects clients load and it includes access to child objects) 
 
 To make the aggregate root also more RESTful, you want to include top level links while ALSO including
-any RESTful components within. 
+any RESTful components within: 
+
+```java 
+@GetMapping("/employees")
+Resources<Resource<Employee>> all() {
+	List<Resource<Employee>> employees=repository.findAll().stream()
+		.map(employee -> new Resource<>(employee, 
+			linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel(),
+			linkTo(methodOn(EmployeeController.class).all()).withRel("employees")))
+		.collect(Collectors.toList());
+
+	return new Resources<>(employees, 
+		linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
+}
+```
+
+The method which used to just be repository.findAll() has now grown to incorporate many more elements.
+Lets examine them: 
+
+* *Resources<>* is another Spring HATEOAS container aimed at encapsulating collections. It also lets 
+  the user include links. 
+  
+What does "encapsulating collections" mean? Is it collections of employees? 
 
 
 
