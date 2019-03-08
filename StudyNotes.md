@@ -646,8 +646,86 @@ import org.springframework.stereotype.Component;
 class EmployeeResourceAssembler implements ResourceAssembler<Employee, Resource<Employee>> {
 
 	@Override
+	public Resource<Employee> toResource(Employee employee) {
+		
+		return new Resource<>(employee, 
+			linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel(),
+			linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
+	}
+}
+```
+
+This simple interface has one method: *toResource()*. It is based on converting a non-resource object
+(Employee) into a resource-based object(Resource<Employee>).
+
+All the code previously used in the controller can be moved into this class. By applying Spring 
+Framework's @Component, this component will be automatically created when the application starts 
+
+
+
+
+```
+   	Spring HATEOAS's abstract base class for all resources is ResourceSupport. But for 
+	simplicity,Resource<T> can be used to wrap all Plain Old Java Objects (POJOs) as resources
+```
+
+
+
+
+To leverage this assembler, you only have to alter the EmployeeController by injecting the assembler
+in the constructor. Then the class becomes: 
+
+```java 
+@RestController 
+class EmployeeController {
+	
+	private final EmployeeRepository repository; 
+
+	private final EmployeeResourceAssembler assembler; 
+
+	EmployeeController(EmployeeRepository repository, EmployeeResourceAssembler assembler) {
+		
+		this.repository = repository; 
+		this.assembler = assembler; 
+	}
+	
+	...
 
 }
+```
+
+
+Now we can use it in the single-item employee method: 
+
+```java
+@GetMapping("/employees/{id}")
+Resource<Employee> one(@PathVariable Long id) {
+	
+	Employee employee = repository.findById(id)
+		.orElseThrow(() -> new EmployeeNotFoundException(id)); 
+
+	return assembler.toResource(employee); 
+}
+```
+
+The code has not changed a lot but now instead of creating the Resource<Employee> instance here, we 
+delegate it to the assembler. 
+
+
+We can do the same thing in the aggregate root controller to simplify things: 
+
+```java 
+@GetMapping("/employees")
+Resources<Resource<Employee>> all() {
+	
+	List<Resource<Employee>> employees = repository.findAll().stream()
+		.map(assembler::toResource)
+		.collect(Collectors.toList());
+
+	return new Resources<>(employees,
+		linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
+}
+```
 
 
 
