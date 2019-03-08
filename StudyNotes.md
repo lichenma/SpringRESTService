@@ -621,7 +621,33 @@ is especially helpful if services get relocated and moved around. As long as the
 maintained, clients can STILL find and interact with things. 
 
 
+<br><br> 
+## Simplifying Link Creation 
 
+As the code stands right now, there is a lot of repetition when creating a single employee link. The 
+code to provide a single link to an employee as well as an "employees" links to the aggregate root 
+was shown twice. 
+
+We can tackle this issue by simply defining a function that converts Employee objects to 
+Resource<Employee> objects. While we could just create this, there are benefits down the road if we 
+implement Spring HATEOAS's *ResourceAssemble* interface 
+
+
+```java 
+package payroll; 
+
+import static org,springframework.hateoas.mvc.ControllerLinkBuilder.*;
+
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.ResourceAssembler;
+import org.springframework.stereotype.Component; 
+
+@Component
+class EmployeeResourceAssembler implements ResourceAssembler<Employee, Resource<Employee>> {
+
+	@Override
+
+}
 
 
 
