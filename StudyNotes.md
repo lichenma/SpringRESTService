@@ -999,7 +999,48 @@ The output is shown below:
 
 This is not only has the resulting object rendered in HAL (both name as well as firstName/lastName), 
 but also the Location header populated with *http://localhost:8080/employees/3*. A hypermedia powered
-client could opt to "surf" to this new resource and proceed to in
+client could opt to "surf" to this new resource and proceed to interact with it. 
+
+
+The PUT controller method requires similar tweaks: 
+
+```java 
+@PutMapping("/employees/{id}")
+ResponseEntity<?> replaceEmployee(@RequestBody Employee newEmployee, @PathVariable Long id) throws 
+URISyntaxException {
+
+	Employee updatedEmployee = repository.findById(id)
+		.map(employee -> {
+			employee.setName(newEmployee.getName());
+			employee.setRole(newEmployee.getRole());
+			return repository.save(employee);
+		})
+		.orElseGet(() -> {
+			newEmployee.setId(id);
+			return repository.save(newEmployee);
+		});
+
+	Resource<Employee> resource = assembler.toResource(updatedEmployee);
+
+	return ResponseEntity
+		.created(new URI(resource.getId().expand().getHref()))
+		.body(resource);
+}
+```
+
+The Employee object built from the save() operation is then wrapped using the EmployeeResourceAssembler
+into a Resource<Employee> object. Since we want a more detailed HTTP response code than 200 OK, we will
+use Spring MVC's ResponseEntity wrapper. It has a handy static method **created()** where we can plug 
+in the resource's URI. 
+
+
+By grabbing the resource you can fetch it's "self" link via the getId() method call. This method yields
+a Link which you can turn into a Java URI. To tie things up nicely, you inject the resource itself into
+the body() method. 
+
+
+
+```
 
 
 
