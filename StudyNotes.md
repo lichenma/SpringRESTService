@@ -1047,7 +1047,52 @@ the body() method.
 ```
 
 
+It is debatable if HTTP 201 Created carries the right semantics since we aren't necessarily "creating"
+a new resource. But it comes pre-loaded with a Location response header, so we go with it. 
 
+
+```
+$ curl -v -X PUT localhost:8080/employees/3 -H 'Content-Type:application/json' -d '{"name": "Ant Man", "role": "Pest Control"}'
+```
+
+The employee resource has been updated and the location URI sent back: 
+
+```
+
+> PUT /employees/3 HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.63.0
+> Accept: */*
+> Content-Type:application/json
+> Content-Length: 43
+>
+} [43 bytes data]
+* upload completely sent off: 43 out of 43 bytes
+< HTTP/1.1 201
+< Location: http://localhost:8080/employees/3
+< Content-Type: application/hal+json;charset=UTF-8
+< Transfer-Encoding: chunked
+< Date: Sat, 09 Mar 2019 20:00:52 GMT
+<
+{ [206 bytes data]
+100   243    0   200  100    43    609    131 --:--:-- --:--:-- --:--:--   740
+{  
+   "id":3,
+   "firstName":"Ant",
+   "lastName":"Man",
+   "role":"Pest Control",
+   "name":"Ant Man",
+   "_links":{  
+      "self":{  
+         "href":"http://localhost:8080/employees/3"
+      },
+      "employees":{  
+         "href":"http://localhost:8080/employees"
+      }
+   }
+}
+* Connection #0 to host localhost left intact
+```
 
 
 
