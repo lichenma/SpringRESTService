@@ -1041,6 +1041,10 @@ the body() method.
 
 
 ```
+	In REST, a resource's id is the URI of that resource. Hence, Spring HATEOAS doesn't hand you
+	the id field of the underlying data type (which no client should), but instead, the URI for it.
+	Do not confuse ResourceSupport.getId() with Employee.getId(). 
+```
 
 
 
