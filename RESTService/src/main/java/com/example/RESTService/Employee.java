@@ -10,11 +10,29 @@ import javax.persistence.Id;
 @Entity
 class Employee {
     private @Id @GeneratedValue Long id;
-    private String name;
+    private String firstName;
+    private String lastName;
     private String role;
+
     Employee(String name, String role) {
-        this.name=name;
+        setName(name);
         this.role=role;
+    }
+
+    Employee(String firstName, String lastName, String role) {
+        this.firstName=firstName;
+        this.lastName=lastName;
+        this.role=role;
+    }
+
+    public String getName() {
+        return this.firstName + " " + this.lastName;
+    }
+
+    public void setName(String name) {
+        String [] parts= name.split(" ");
+        this.firstName=parts[0];
+        this.lastName=parts[1];
     }
     Employee(){
         // default no args constructor

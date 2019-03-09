@@ -811,7 +811,7 @@ Is management ready for that?
 
 
 <br><br> 
-## Strategy 
+## Strategy - Never Delete Values  
 
 
 There is an old strategy that predates REST by years 
@@ -849,9 +849,157 @@ away.
 
 
 
+In this formate we show firstName, lastName AND name. While there is a bit of duplication of
+information, the purpose is to support both old and new clients. That means that you can upgrade the 
+server without requiring clients to upgrade at the same time. A good move that should reduce downtime. 
+
+
+Not only should we show this information in both the "old way" and the "new way" we should also process
+incoming data both ways. 
+
+
+Here's an example: 
+
+* Employee record that handles both "old" and "new" clients 
+
+
+```java
+package payroll; 
+
+import lombok.Data; 
+
+import javax.persistence.Entity
+import javax.persistence.GeneratedValue; 
+import javax.persistence.Id; 
+
+@Data
+@Entity 
+class Employee {
+	
+	private @Id @GeneratedValue Long id; 
+	private String firstName; 
+	private String lastName; 
+	private String role; 
+
+	Employee(String firstName, String lastName, String role) { 
+		this.firstName=firstName; 
+		this.lastName=lastName;
+		this.role=role; 
+	}
+
+	public String getName() {
+		return this.firstName + " "+this.lastName;
+	}
+
+	public void setName(String name) {
+		String[] parts=name.split(" "); 
+		this.firstName=parts[0];
+		this.lastName=parts[1];
+	}
+}
+```
+
+This class is very similar to the previous version of Employee. Let's go over some of the changes: 
+
+* Field name has been replaced by firstName and lastName. Lombok will generate getters and setters for
+  these 
+
+* A "virtual" getter for the old name property, getName() is defined. it uses the firstName and 
+  lastName fields to produce a value 
+
+* A "virtual" setter for the old name property is also defined, setName(). It parses an incoming string
+  and stores it into the proper fields 
 
 
 
+Not every change to the API is as simple as splitting a string or merging two strings but in many cases
+it is not impossible to come up with a set of transformations. 
+
+
+
+
+<br><br> 
+## Ensure Proper Response
+
+Another fine tuning is to ensure that each of the REST methods returns a proper response. We update the
+POST method like this: 
+
+```java
+@PostMapping("/employees")
+ResponseEntity<?> newEmployee(@RequestBody Employee newEmployee) throws URISyntaxException {
+	
+	Resource<Employee> resource = assembler.toResource(repository.save(newEmployee));
+
+	return ResponseEntity
+		.created(new URI(resource.getId().expand().getHref()))
+		.body(resource);
+}
+```
+
+
+* The new Employee object is saved as before but the resulting object is wrapped using the
+  EmployeeResourceAssembler 
+
+* Spring MVC's ResponseEntity is used to create an HTTP 201 Created status message. This type of 
+  response typically includes a Location response header, and we use the newly formed link 
+
+* Additionally, return the resource-based version of the saved object 
+
+
+With this tweak in place, you can use the same endpoint to create a new employee resource, and use the 
+legacy name field: 
+
+
+
+
+```
+$ curl -v -X POST localhost:8080/employees -H 'Content-Type:application/json' -d '{"name": "Ant Man", "role": "Thief"}'
+```
+
+
+
+
+The output is shown below: 
+
+```
+> POST /employees HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.63.0
+> Accept: */*
+> Content-Type:application/json
+> Content-Length: 36
+>
+} [36 bytes data]
+* upload completely sent off: 36 out of 36 bytes
+< HTTP/1.1 201
+< Location: http://localhost:8080/employees/3
+< Content-Type: application/hal+json;charset=UTF-8
+< Transfer-Encoding: chunked
+< Date: Sat, 09 Mar 2019 17:53:59 GMT
+<
+{ [199 bytes data]
+100   229    0   193  100    36    242     45 --:--:-- --:--:-- --:--:--   287
+{  
+   "id":3,
+   "firstName":"Ant",
+   "lastName":"Man",
+   "role":"Thief",
+   "name":"Ant Man",
+   "_links":{  
+      "self":{  
+         "href":"http://localhost:8080/employees/3"
+      },
+      "employees":{  
+         "href":"http://localhost:8080/employees"
+      }
+   }
+}
+* Connection #0 to host localhost left intact
+```
+
+This is not only has the resulting object rendered in HAL (both name as well as firstName/lastName), 
+but also the Location header populated with *http://localhost:8080/employees/3*. A hypermedia powered
+client could opt to "surf" to this new resource and proceed to in
 
 
 
