@@ -1098,6 +1098,24 @@ The employee resource has been updated and the location URI sent back:
 
 
 
+Finally we update the DELETE operation suitably: 
+
+```java 
+@DeleteMapping("/employees/{id}")
+ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
+	
+	repository.deleteById(id);
+
+	return ResponseEntity.noContent().build();
+}
+```
+
+
+
+
+
+
+
 
 
 
