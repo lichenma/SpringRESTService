@@ -1149,15 +1149,59 @@ optimization until we measure.
 
 
 
+
+
 <br><br>
 ## Building links into the REST API
+
+
 
 So far, we have built an evolvable API with the bare bones links. To grow the API and better serve 
 clients, we need to embrace the concept of **Hypermedia as the Engine of Application State** 
 
 What does this mean? We will explore it in the following section: 
 
+Business logic inevitably builds up rules that involve processes. The risk of such systems is we often
+carry such server-side logic into clients and build up strong coupling. REST is about breaking down 
+such connections and minimizing such coupling. 
 
+To show how to cope with state changes without triggering breaking changes in clients, imagine adding a
+system that fulfills orders. 
+
+
+As a first step, define an *Order* record: 
+
+```java
+package payroll; 
+
+import lombok.Data; 
+
+import javax.persistence.Entity; 
+import javax.persistence.GeneratedValue; 
+import javax.persistence.Id;
+
+@Entity 
+@Data
+@Table(name="CUSTOMER_ORDER") 
+class Order {
+	
+	private @Id @GeneratedValue Long id; 
+
+	private String description; 
+	private Status status; 
+
+	Order(String description, Status status) {
+		
+		this.description = description; 
+		this.status = status; 
+	}
+}
+```
+
+* The class requires a JPA @Table annotation changing the table's name to CUSTOMER\_ORDER because
+  ORDER is not a valid name for table 
+
+* It includes a description field as well as a status field
 
 
 
