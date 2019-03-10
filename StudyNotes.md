@@ -1198,12 +1198,34 @@ class Order {
 }
 ```
 
+
 * The class requires a JPA @Table annotation changing the table's name to CUSTOMER\_ORDER because
   ORDER is not a valid name for table 
 
 * It includes a description field as well as a status field
 
+Orders must go through a certain series of state transitions from the time a customer submits an order
+and it is either fulfilled or cancelled. This can be captured as a Java enum: 
 
+
+
+```java 
+package payroll; 
+
+enum Status {
+
+	IN_PROGRESS, 
+	COMPLETED,
+	CANCELLED;
+}
+```
+
+
+
+This enum captures the various states an Order can occupy. For this tutorial, we will keep it simple.
+
+To support interacting with orders in the database, you must define a corresponding Spring Data 
+repository
 
 
 
