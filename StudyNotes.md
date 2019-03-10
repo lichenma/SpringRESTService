@@ -1225,10 +1225,63 @@ enum Status {
 This enum captures the various states an Order can occupy. For this tutorial, we will keep it simple.
 
 To support interacting with orders in the database, you must define a corresponding Spring Data 
-repository
+repository: 
 
 
 
+
+```java 
+interface OrderRepository extends JpaRepository<Order, Long> {
+}
+```
+
+
+
+With this in place, you can now define a basic OrderController: 
+
+
+
+
+
+```java
+@RestController
+class OrderController { 
+
+	private final OrderRepository orderRepository; 
+	private final OrderResourceAssembler assembler; 
+
+	OrderController(OrderRepository orderRepository, orderResourceAssembler assembler) {
+	
+		this.orderRepository = orderRepository; 
+		this.assembler = assembler; 
+
+	} 
+
+	@GetMapping("/orders")
+	Resources<Resource<Order>> all() {
+		
+		List<Resource<Order>> orders = orderRepository.findAll().stream()
+			.map(assembler::toResource)
+			.collect(Collectors.toList());
+
+		return new Resources<>(orders,
+			linkTo(methodOn(OrderController.class).all()).withSelfRel());
+
+	}
+
+	@GetMapping("/orders/{id}")
+	Resource<Order> one(@PathVariable Long id) {
+		
+		return assembler.toResource(
+			orderRepository.findById(id)
+				.orElseThrow(() -> new OrderNotFoundException(id)));
+	}
+
+	@PostMapping("/orders") 
+	ResponseEntity<Resource<Order>> newOrder(@RequestBody Order order) {
+		
+		order.
+	}
 
 
 
