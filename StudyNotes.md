@@ -1099,7 +1099,6 @@ The employee resource has been updated and the location URI sent back:
 
 
 Finally we update the DELETE operation suitably: 
-
 ```java 
 @DeleteMapping("/employees/{id}")
 ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
@@ -1113,6 +1112,50 @@ ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
 
 
 
+Now if we try to delete an employee profile we are given an HTTP 204 No Content response: 
+```
+$ curl -v -X DELETE localhost:8080/employees/1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+> DELETE /employees/1 HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.63.0
+> Accept: */*
+>
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0< HTTP/1.1 204
+< Date: Sun, 10 Mar 2019 18:00:22 GMT
+<
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost left intact
+```
+
+
+Making changes to the fields in the Employee class will also require coordination with the database 
+team so that they can properly migrate existing content into the new columns. We are new ready for an
+upgrade that will NOT disturb existing clients while newer clients can take advantage of the 
+enhancements! 
+
+
+There may be concern about the amount of information being sent over the wire. In some systems where 
+every byte counts, evolution of APIs may need to take a backseat. Don't pursue such premature 
+optimization until we measure. 
+
+
+
+
+
+
+
+<br><br>
+## Building links into the REST API
+
+So far, we have built an evolvable API with the bare bones links. To grow the API and better serve 
+clients, we need to embrace the concept of **Hypermedia as the Engine of Application State** 
+
+What does this mean? We will explore it in the following section: 
 
 
 
