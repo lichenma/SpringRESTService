@@ -28,7 +28,7 @@ public class OrderResourceAssembler implements ResourceAssembler<Order, Resource
                     linkTo(methodOn(OrderController.class)
                         .complete(order.getId())).withRel("complete"));
         }
-        
+
         return orderResource;
     }
 }

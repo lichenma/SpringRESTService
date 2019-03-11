@@ -1406,12 +1406,18 @@ ResponseEntity<ResourceSupport> cancel(@PathVariable Long id) {
 	Order order = orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id));
 
 	if (order.getStatus() == Status.IN_PROGRESS) {
-		order.
+		order.setStatus(Status.CANCELLED);
+		return ResponseEntity.ok(assembler.toResource(orderRepository.save(order)));
 	}
+
+	return ResponseEntity
+		.status(HttpStatus.METHOD_NOT_ALLOWED) 
+		.body(new VndErrors.VndError("Method not allowed", "You cannot cancel an order that is
+		      in the " + order.getStatus() + " status"));
 }
+```
 
-
-
+This checks the Order status before allowing it to be cancelled. 
 
 
 

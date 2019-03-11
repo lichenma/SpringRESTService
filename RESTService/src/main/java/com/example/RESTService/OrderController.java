@@ -1,10 +1,14 @@
 package com.example.RESTService;
 
 import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.ResourceSupport;
 import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.VndErrors;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.xml.ws.Response;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,5 +53,20 @@ public class OrderController {
         return ResponseEntity
                 .created(linkTo(methodOn(OrderController.class).one(newOrder.getId())).toUri())
                 .body(assembler.toResource(newOrder));
+    }
+
+    @DeleteMapping("/orders/{id}/cancel")
+    ResponseEntity<ResourceSupport> cancle(@PathVariable Long id) {
+
+        Order order= orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id));
+
+        if (order.getStatus()==Status.IN_PROGRESS) {
+            order.setStatus(Status.CANCELLED);
+            return ResponseEntity.ok(assembler.toResource(orderRepository.save(order)));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(new VndErrors.VndError("Method Not Allowed", "You Cannot Cancel an Order that is in the " + order.getStatus() + " status"));
     }
 }
