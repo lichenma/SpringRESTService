@@ -56,7 +56,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/orders/{id}/cancel")
-    ResponseEntity<ResourceSupport> cancle(@PathVariable Long id) {
+    ResponseEntity<ResourceSupport> cancel(@PathVariable Long id) {
 
         Order order= orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id));
 

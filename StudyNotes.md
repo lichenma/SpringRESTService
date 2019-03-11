@@ -1412,12 +1412,45 @@ ResponseEntity<ResourceSupport> cancel(@PathVariable Long id) {
 
 	return ResponseEntity
 		.status(HttpStatus.METHOD_NOT_ALLOWED) 
-		.body(new VndErrors.VndError("Method not allowed", "You cannot cancel an order that is
-		      in the " + order.getStatus() + " status"));
+		.body(new VndErrors.VndError("Method Not Allowed", "You Cannot Cancel an Order that is
+		      in the " + order.getStatus() + " Status"));
 }
 ```
 
-This checks the Order status before allowing it to be cancelled. 
+
+
+
+This method checks the Order status before allowing it to be cancelled. If its not a valid state, it 
+returns a Spring HATEOAS VndError, a hypermedia-supporting error container. If the transition is indeed
+valid, it transistions the Order to CANCELLED. 
+
+
+
+
+
+
+Now, we add the following to OrderController for order completion: 
+
+```java 
+@PutMapping("/orders/{id}/complete") 
+ResponseEntity<ResourceSuppport> complete(@PathVariable Long id) {
+
+	Order order= orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id));
+
+	if (order.getStatus() == Status.IN_PROGRESS) {
+		order.setStatus(Status.COMPLETED);
+		return ResponseEntity.ok(assembler.toResource(orderRepository.save(order)));
+	}
+
+	return ResponseEntity
+		.status(HttpStatus.METHOD_NOT_ALLOWED)
+		.body(new VndErrors.VndError("Method Not Allowed", "You Cannot Complete an Order that
+		      is in the " + order.getStatus() + " Status"));
+}
+```
+
+
+
 
 
 
