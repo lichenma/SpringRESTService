@@ -21,4 +21,8 @@ public class Order {
         this.description = description;
         this.status = status;
     }
+
+    Order(){
+        // default no args constructor
+    }
 }

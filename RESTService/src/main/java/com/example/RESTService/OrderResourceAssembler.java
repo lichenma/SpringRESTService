@@ -6,6 +6,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceAssembler;
 import org.springframework.stereotype.Component;
 
+@Component
 public class OrderResourceAssembler implements ResourceAssembler<Order, Resource<Order>> {
 
     @Override
