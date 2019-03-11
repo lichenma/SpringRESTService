@@ -1290,10 +1290,69 @@ class OrderController {
 }
 ```
 
-* It contains the same REST controller setup as the controllers we have built so far
-* It injects both an OrderRepository as well as an OrderResourceAssembler 
-* 
 
+
+
+* It contains the same REST controller setup as the controllers we have built so far
+* It injects both an OrderRepository as well as a OrderResourceAssembler 
+* The first two Spring MVC routes handle the aggregate root as well a single item Order resource 
+  request
+* The third Spring MVC route handles creating new orders by starting them in the IN\_PROGRESS state
+* All the controller methods return one of Spring HATEOAS's ResourceSupport subclasses to properly 
+  render hypermedia (or a wrapper around such a type) 
+
+
+
+
+Before building the OrderResourceAssembler, let's take a look at what needs to happen. We are modelling
+the flow of states between Status.IN\_PROGRESS, Status.COMPLETED and STATUS.CANCELLED. A natural thing
+when serving up such data to clients is to let the clients make the decision on what it can do based on
+this payload. 
+
+
+But this would be wrong. 
+
+
+
+What happens when a new state is introduced into this flow? The placement of various buttons on the UI
+would probably be erroneous. 
+
+
+
+What if the name of each state was changed, perhaps while coding international support and showing 
+locale-specific text for each state? That would most likely break all the clients. 
+
+
+
+
+
+<br><br> 
+## Spring HATEOAS
+
+Enter HATEOAS or Hypermedia as the Engine of Application State. Instead of clients parsing the payload,
+given them links to signal valid actions. Decouple state-based actions from the payload of data. In 
+other words, when CANCEL and COMPLETE are valid actions, dynamically add them to the list of links. 
+**Clients only need show users the corresponding buttons when the links exist.** 
+
+This decouples clients from having to know WHEN such actions are valid, reducing the risk of the server
+and its clients getting out of sync on the logic of state transitions. 
+
+Having already embraced the concept of Spring HATEOAS ResourceAssembler components, putting such logic
+in the OrderResourceAssembler would be the perfect place to capture this business rule: 
+
+
+```java 
+package payroll; 
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
+
+import org.springframework.hateoas.Resource; 
+import org.springframework.hateoas.ResourceAssembler; 
+import org.springframework.stereotype.Component; 
+
+
+@Component 
+class 
 
 
 
