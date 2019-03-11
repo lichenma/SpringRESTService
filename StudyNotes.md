@@ -1529,9 +1529,148 @@ This HAL document immediately shows different links for each order, based upon i
 * The first order, being COMPLETED only has the navigational links. The state transition links are not
   shown 
 
-* The second 
+* The second order, being IN\_PROGRESS additionally has the cancel link as well as the complete link
 
 
+
+<br><br>
+Let's try cancelling an order: 
+
+```
+$ curl -v -X DELETE http://localhost:8080/orders/4/cancel | json_pp
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+> DELETE /orders/4/cancel HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.63.0
+> Accept: */*
+>
+< HTTP/1.1 200
+< Content-Type: application/hal+json;charset=UTF-8
+< Transfer-Encoding: chunked
+< Date: Mon, 11 Mar 2019 23:21:40 GMT
+<
+{ [167 bytes data]
+100   161    0   161    0     0    234      0 --:--:-- --:--:-- --:--:--   234
+* Connection #0 to host localhost left intact
+{
+   "id" : 4,
+   "status" : "CANCELLED",
+   "description" : "iPhone",
+   "_links" : {
+      "self" : {
+         "href" : "http://localhost:8080/orders/4"
+      },
+      "orders" : {
+         "href" : "http://localhost:8080/orders"
+      }
+   }
+}
+```
+
+This response shows an HTTP 200 status code indicating that it was successful. The response HAL 
+document shows that order in its new state (CANCELLED). And the state-altering links are gone. 
+
+
+
+If we try running the same operation again: 
+
+```
+$ curl -v -X DELETE http://localhost:8080/orders/4/cancel | json_pp
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+> DELETE /orders/4/cancel HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.63.0
+> Accept: */*
+>
+< HTTP/1.1 405
+< Content-Type: application/hal+json;charset=UTF-8
+< Transfer-Encoding: chunked
+< Date: Mon, 11 Mar 2019 23:24:35 GMT
+<
+{ [108 bytes data]
+100   102    0   102    0     0   3290      0 --:--:-- --:--:-- --:--:--  3290
+* Connection #0 to host localhost left intact
+{
+   "logref" : "Method Not Allowed",
+   "message" : "You Cannot Cancel an Order that is in the CANCELLED status"
+}
+```
+
+
+
+This time we see an HTTP 405 Method Not Allowed response. DELETE has become an invalid operation. The
+VndError response object clearly indicates that you aren't allowed to "cancel" an order already in the
+"CANCELLED" status. 
+
+
+Additionally, trying to complete the same order also fails: 
+
+```
+$ curl -v -X PUT http://localhost:8080/orders/4/complete | json_pp
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+> PUT /orders/4/complete HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.63.0
+> Accept: */*
+>
+< HTTP/1.1 405
+< Content-Type: application/hal+json;charset=UTF-8
+< Transfer-Encoding: chunked
+< Date: Mon, 11 Mar 2019 23:27:20 GMT
+<
+{ [110 bytes data]
+100   104    0   104    0     0   6500      0 --:--:-- --:--:-- --:--:--  6500
+* Connection #0 to host localhost left intact
+{
+   "logref" : "Method Not Allowed",
+   "message" : "You Cannot Complete an Order that is in the CANCELLED status"
+}
+```
+
+With all of this in place, the order fulfillment service is capable of conditionally showing what 
+operations are available. It also guards against invalid operations. 
+
+
+By leveraging the protocol of hypermedia and links, clients can be built sturdier and less likely to 
+break simply because of a change in the data. And Spring HATEOAS eases building the hypermedia you need
+to serve your clients. 
+
+
+
+
+<br><br>
+## Summary 
+
+Thanks to spring.io for this tutorial and through it we have gone through various tactics to build 
+REST API. As it happens, REST isn't just about pretty URIs and returning JSON instead of XML. 
+
+
+Instead, the following tactics help make the services less likely to break exisitng clients you may or
+may not control: 
+
+* Do not remove old fields. Instead, support them. 
+* Use rel-based links so clients don't have to hard code URIs
+* Retain old links as long as possible. Even if you have to change the URI, keep the rels so older 
+  clients have a path onto the newer features
+* Use links, not payload data, to instruct clients when various state-driving operations are available
+
+
+It may appear to be a bit of effort to build up ResourceAssembler implementations for each resource 
+type and to use these components in all of your controllers. But this extra bit of server-side setup
+(made simpler thanks to Spring HATEOAS) can ensure the clients you control (and more importantly those
+you don't) can upgrade with ease as you evolve your API. 
 
 
 
