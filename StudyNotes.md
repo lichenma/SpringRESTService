@@ -1381,7 +1381,34 @@ class OrderResourceAssembler implements ResourceAssembler<Order, Resource<Order>
 ```
 
 
-This resource
+This resource assembler always inclues the self link to the single-item resource as well as a link back
+to the aggregate root. But it also includes two conditional links to OrderController.cancel(id) as well
+as OrderController.complete(id). These links are ONLY shown when the order's status is
+Status.IN\_PROGRESS. 
+
+
+
+If clients can adopt HAL and the ability to read links instead of simply reading the data of plain old
+JSON, they can trade in the need for domain knowledge about the order system. This naturally *reduces
+coupling* between the client and server. And it opens the door to tuning the flow of order fulfillment
+without breaking clients in the process. 
+
+
+
+To round out order fulfillment, we add the following to the OrderController for the cancel operation: 
+
+
+
+```java 
+@DeleteMapping("/orders/{id}/cancel")
+ResponseEntity<ResourceSupport> cancel(@PathVariable Long id) {
+
+	Order order = orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id));
+
+	if (order.getStatus() == Status.IN_PROGRESS) {
+		order.
+	}
+}
 
 
 
