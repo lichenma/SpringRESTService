@@ -1280,11 +1280,19 @@ class OrderController {
 	@PostMapping("/orders") 
 	ResponseEntity<Resource<Order>> newOrder(@RequestBody Order order) {
 		
-		order.
+		order.setStatus(Status.IN_PROGRESS); 
+		Order newOrder= orderRepository.save(order);
+
+		return ResponseEntity
+			.created(linkTo(methodOn(OrderController.class).one(newOrder.getId())).toUri())
+			.body(assembler.toResource(newOrder));
 	}
+}
+```
 
-
-
+* It contains the same REST controller setup as the controllers we have built so far
+* It injects both an OrderRepository as well as an OrderResourceAssembler 
+* 
 
 
 
