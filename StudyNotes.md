@@ -1476,8 +1476,60 @@ orderRepository.findAll().forEach(order -> {
 
 Now we can test things out. To use the new service just perform a few operations: 
 
+```
+$ curl -v http://localhost:8080/orders | json_pp
 
+{
+   "_links" : {
+      "self" : {
+         "href" : "http://localhost:8080/orders"
+      }
+   },
+   "_embedded" : {
+      "orderList" : [
+         {
+            "status" : "COMPLETED",
+            "id" : 3,
+            "description" : "MacBook Pro",
+            "_links" : {
+               "orders" : {
+                  "href" : "http://localhost:8080/orders"
+               },
+               "self" : {
+                  "href" : "http://localhost:8080/orders/3"
+               }
+            }
+         },
+         {
+            "status" : "IN_PROGRESS",
+            "id" : 4,
+            "description" : "iPhone",
+            "_links" : {
+               "orders" : {
+                  "href" : "http://localhost:8080/orders"
+               },
+               "complete" : {
+                  "href" : "http://localhost:8080/orders/4/complete"
+               },
+               "cancel" : {
+                  "href" : "http://localhost:8080/orders/4/cancel"
+               },
+               "self" : {
+                  "href" : "http://localhost:8080/orders/4"
+               }
+            }
+         }
+      ]
+   }
+}
+```
 
+This HAL document immediately shows different links for each order, based upon its present state
+
+* The first order, being COMPLETED only has the navigational links. The state transition links are not
+  shown 
+
+* The second 
 
 
 
