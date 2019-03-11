@@ -1450,6 +1450,33 @@ ResponseEntity<ResourceSuppport> complete(@PathVariable Long id) {
 ```
 
 
+This implements similar logic to prevent an Order status from being completed unless in the proper 
+state. 
+
+
+
+
+
+
+
+<br><br> 
+## Testing the Application
+
+
+Now by adding a little extra initialization code to LoadDatabase: 
+
+```java 
+orderRepository.save(new Order("MacBook Pro", Status.COMPLETED));
+orderRepository.save(new Order("iPhone", Status.IN_PROGRESS));
+
+orderRepository.findAll().forEach(order -> {
+	log.info("Preloaded " + order);
+});
+```
+
+Now we can test things out. To use the new service just perform a few operations: 
+
+
 
 
 
